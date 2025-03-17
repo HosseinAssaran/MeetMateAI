@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Meet Subtitles Saver",
+  "version": "0.1.1",
+  "description": "Captures and saves Google Meet subtitles",
+  "permissions": [
+    "scripting",
+    "storage",
+    "downloads",
+    "activeTab",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://meet.google.com/*",
+    "https://generativelanguage.googleapis.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://meet.google.com/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+} 

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Meet Subtitles Saver</title>
+  <style>
+    body {
+      width: 200px;
+      padding: 10px;
+    }
+    button {
+      width: 100%;
+      margin: 5px 0;
+      padding: 5px;
+    }
+    .version {
+      color: #666;
+      font-size: 12px;
+      text-align: center;
+      margin-top: 10px;
+    }
+    #response {
+      margin-top: 10px;
+      padding: 5px;
+      border: 1px solid #ccc;
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <button id="startCapture">Start Capturing</button>
+  <button id="stopCapture">Stop Capturing</button>
+  <button id="downloadSubtitles">Download Subtitles</button>
+  <div id="response"></div>
+  <div class="version">Version 0.1.1</div>
+  <script src="popup.js"></script>
+</body>
+</html> 
