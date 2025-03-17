@@ -59,3 +59,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+  const apiKey = GEMINI_API_KEY;
+
+  const model = "gemini-1.5-pro-latest";
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+  document.getElementById("sendToGemini").addEventListener("click", () => {
+    const prompt = document.getElementById("geminiPrompt").value;
+    const responseBox = document.getElementById("geminiResponse");
+
+    responseBox.textContent = "Loading...";
+
+    fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }]
+      })
+    })
+      .then(res => res.json())
+      .then(data => {
+        const output = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response";
+        responseBox.textContent = output;
+      })
+      .catch(err => {
+        console.error(err);
+        responseBox.textContent = "Error: " + err.message;
+      });
+  });
