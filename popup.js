@@ -31,15 +31,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Display subtitles in prompt
         if (response && response.content) {
-          const lines = response.content.split('\n');
-          const cleanSubtitles = lines
-            .map(line => {
-              const lastBracket = line.lastIndexOf(']');
-              return lastBracket !== -1 ? line.slice(lastBracket + 1).trim() : line.trim();
-            })
-            .filter(line => line && !line.startsWith('===') && !line.startsWith('Recorded on:'));
-
-          promptInput.value = cleanSubtitles.join('\n');
+          const lastLine = response.content.trim().split('\n').at(-1);
+          const cleanSubtitles = lastLine.split(']').pop().trim();
+          console.log(cleanSubtitles);          
+          promptInput.value = cleanSubtitles;
           responseBox.textContent = "Cleaned subtitles loaded into prompt";
         } else {
           promptInput.value = "";
