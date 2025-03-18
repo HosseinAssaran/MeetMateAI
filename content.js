@@ -2,6 +2,7 @@ let isCapturing = false;
 let subtitles = [];
 let lastSubtitle = '';
 let debugMode = true;
+let basePrompt = '';
 const VERSION = '0.1.1';
 
 // Function to format timestamp
@@ -254,7 +255,7 @@ function createDraggableUI() {
   ui.appendChild(stopButton);
   ui.appendChild(downloadButton);
   ui.appendChild(promptInput);
-  ui.appendChild(shortAnswerContainer); // Add checkbox container
+  ui.appendChild(shortAnswerContainer);
   ui.appendChild(sendButton);
   ui.appendChild(status);
   document.body.appendChild(ui);
@@ -294,8 +295,8 @@ function createDraggableUI() {
   startButton.addEventListener('click', () => {
     debugLog('Starting capture');
     isCapturing = true;
-    subtitles = []; // Clear subtitles to start fresh
-    lastSubtitle = ''; // Reset last subtitle
+    subtitles = [];
+    lastSubtitle = '';
 
     if (currentObserver) {
       currentObserver.disconnect();
@@ -313,6 +314,23 @@ function createDraggableUI() {
     updateSubtitleDisplay('Capture started');
   });
 
+  // Event handler for checkbox
+  shortAnswerCheckbox.addEventListener('change', () => {
+    const currentText = promptInput.value.trim();
+    if (shortAnswerCheckbox.checked) {
+      if (!currentText.startsWith('Short answer: ')) {
+        basePrompt = currentText; // Store the base prompt
+        promptInput.value = `Short answer: ${basePrompt}`;
+      }
+    } else {
+      if (currentText.startsWith('Short answer: ')) {
+        promptInput.value = basePrompt; // Restore the base prompt
+      }
+    }
+    debugLog('Checkbox toggled. Prompt updated to:', promptInput.value);
+  });
+
+  // Update stopButton to set basePrompt
   stopButton.addEventListener('click', () => {
     debugLog('Stopping capture');
     isCapturing = false;
@@ -329,9 +347,11 @@ function createDraggableUI() {
     if (subtitles.length > 0) {
       const lastLine = subtitles[subtitles.length - 1];
       const cleanSubtitles = lastLine.split(']').pop().trim();
-      promptInput.value = cleanSubtitles;
+      basePrompt = cleanSubtitles; // Set basePrompt
+      promptInput.value = shortAnswerCheckbox.checked ? `Short answer: ${basePrompt}` : basePrompt;
       updateSubtitleDisplay('Capture stopped - Subtitles loaded');
     } else {
+      basePrompt = '';
       promptInput.value = '';
       updateSubtitleDisplay('Capture stopped - No subtitles captured');
     }
@@ -364,34 +384,18 @@ function createDraggableUI() {
     });
   });
 
-  sendButton.addEventListener('click', async () => {
+  sendButton.addEventListener('click', () => {
     debugLog('Send to Gemini clicked');
-    if (typeof GEMINI_API_KEY === 'undefined') {
-      updateSubtitleDisplay('Error: GEMINI_API_KEY not defined');
-      debugLog('GEMINI_API_KEY is undefined');
-      return;
-    }
-
-    const apiKey = GEMINI_API_KEY;
-    const model = 'gemini-1.5-pro-latest';
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     const userPrompt = promptInput.value.trim();
     let fullPrompt = userPrompt;
 
     updateSubtitleDisplay('Loading...');
     debugLog('Prompt before processing:', userPrompt);
 
-    // Check if short answer checkbox is checked
-    const shortAnswerChecked = shortAnswerCheckbox.checked;
-    if (shortAnswerChecked) {
-      fullPrompt = `Short answer: ${fullPrompt}`;
-      debugLog('Short answer prepended to prompt');
-    }
 
     if (subtitles.length > 0) {
       debugLog('Full prompt with subtitles:', fullPrompt);
     } else {
-      updateSubtitleDisplay('Warning: No subtitles captured yet. Using prompt only...');
       debugLog('No subtitles, using prompt only');
     }
 
@@ -399,29 +403,33 @@ function createDraggableUI() {
 
     if (confirm('Do you want to send this to Gemini?\n\nPress OK to send, Cancel to edit')) {
       updateSubtitleDisplay('Sending to Gemini...');
-      debugLog('Sending request to Gemini API with key:', apiKey.substring(0, 5) + '...');
+      debugLog('Preparing to send prompt to background script:', fullPrompt);
+
       try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] })
+        chrome.runtime.sendMessage({
+          action: 'sendToGemini',
+          prompt: fullPrompt,
+          apiKey: GEMINI_API_KEY // Pass the key from config.js
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            debugLog('Message sending failed:', chrome.runtime.lastError.message);
+            updateSubtitleDisplay('Error: ' + chrome.runtime.lastError.message);
+            return;
+          }
+
+          debugLog('Response from background:', response);
+          if (response && response.success) {
+            updateSubtitleDisplay(response.output);
+            debugLog('Output received and displayed:', response.output);
+          } else {
+            updateSubtitleDisplay(`Error: ${response?.error || 'Unknown error'}`);
+            debugLog('Error from background:', response?.error || 'No error message');
+          }
         });
-
-        debugLog('Fetch response status:', response.status);
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        debugLog('API response data:', data);
-
-        const output = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from Gemini';
-        updateSubtitleDisplay(output);
-        debugLog('Output displayed:', output);
+        debugLog('Message sent to background script with API key');
       } catch (err) {
-        console.error('Fetch error:', err);
-        updateSubtitleDisplay(`Error: ${err.message}`);
-        debugLog('Error occurred:', err.message);
+        debugLog('Error during message send:', err.message);
+        updateSubtitleDisplay('Error: ' + err.message);
       }
     } else {
       updateSubtitleDisplay('Send cancelled. Edit the prompt and try again.');
@@ -471,10 +479,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ isVisible: isVisible });
       break;
   }
-  return true; // Keep message channel open for async response
+  return true;
 });
 
 // Initial setup
 debugLog('Content script loaded');
-createDraggableUI(); // Create UI on load, hidden by default
+createDraggableUI();
 checkForSubtitles();
