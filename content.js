@@ -93,14 +93,14 @@ let currentInterval = null;
 // Message handling
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   debugLog('Received message:', request.action);
-  
+
   switch (request.action) {
     case 'startCapture':
       debugLog('Starting capture');
       isCapturing = true;
       subtitles = [];
       lastSubtitle = '';
-      
+
       if (currentObserver) {
         currentObserver.disconnect();
         debugLog('Disconnected old observer');
@@ -109,7 +109,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         clearInterval(currentInterval);
         debugLog('Cleared old interval');
       }
-      
+
       const { observer, checkInterval } = observeSubtitles();
       currentObserver = observer;
       currentInterval = checkInterval;
@@ -154,6 +154,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       return true; // Keep message channel open for async response
       break;
   }
+
+  // Ensure the listener doesn’t expect an async response unless specified
+  return false; // Default to synchronous unless 'downloadSubtitles'
 });
 
 // Initial setup
