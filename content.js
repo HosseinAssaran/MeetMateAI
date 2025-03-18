@@ -291,6 +291,29 @@ function createDraggableUI() {
     debugLog('Dragging stopped');
   });
 
+  // Function to toggle CC button based on desired state
+  function toggleCC(desiredState) {
+    // Find the CC button using its attributes from the provided HTML
+    const ccButton = document.querySelector('button[jsname="r8qRAd"][aria-label*="captions"]');
+    if (!ccButton) {
+      debugLog('CC button not found');
+      return false;
+    }
+
+    const isCCEnabled = ccButton.getAttribute('aria-pressed') === 'true';
+    debugLog('Current CC state:', isCCEnabled ? 'Enabled' : 'Disabled');
+
+    // If the current state doesn't match the desired state, toggle it
+    if (isCCEnabled !== desiredState) {
+      ccButton.click();
+      debugLog(`CC toggled to ${desiredState ? 'Enabled' : 'Disabled'}`);
+      return true;
+    } else {
+      debugLog('CC already in desired state');
+      return false;
+    }
+  }
+
   // Event handlers for controls
   startButton.addEventListener('click', () => {
     debugLog('Starting capture');
@@ -311,7 +334,10 @@ function createDraggableUI() {
     currentObserver = observer;
     currentInterval = checkInterval;
     debugLog('New observer and interval set up');
-    updateSubtitleDisplay('Capture started');
+
+    // Enable CC automatically
+    toggleCC(true);
+    updateSubtitleDisplay('Capture started - CC enabled');
   });
 
   // Event handler for checkbox
@@ -330,7 +356,7 @@ function createDraggableUI() {
     debugLog('Checkbox toggled. Prompt updated to:', promptInput.value);
   });
 
-  // Update stopButton to set basePrompt
+  // Updated stopButton event listener
   stopButton.addEventListener('click', () => {
     debugLog('Stopping capture');
     isCapturing = false;
@@ -343,17 +369,21 @@ function createDraggableUI() {
       currentInterval = null;
     }
     debugLog('Total subtitles captured:', subtitles.length);
-    updateSubtitleDisplay('Capture stopped');
+
+    // Disable CC automatically
+    toggleCC(false);
+    updateSubtitleDisplay('Capture stopped - CC disabled');
+
     if (subtitles.length > 0) {
       const lastLine = subtitles[subtitles.length - 1];
       const cleanSubtitles = lastLine.split(']').pop().trim();
       basePrompt = cleanSubtitles; // Set basePrompt
       promptInput.value = shortAnswerCheckbox.checked ? `Short answer: ${basePrompt}` : basePrompt;
-      updateSubtitleDisplay('Capture stopped - Subtitles loaded');
+      updateSubtitleDisplay('Capture stopped - Subtitles loaded - CC disabled');
     } else {
       basePrompt = '';
       promptInput.value = '';
-      updateSubtitleDisplay('Capture stopped - No subtitles captured');
+      updateSubtitleDisplay('Capture stopped - No subtitles captured - CC disabled');
     }
   });
 
