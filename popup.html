@@ -7,112 +7,52 @@
     html,
     body {
       width: 300px;
-      /* Fixed width */
-      min-height: 350px;
-      /* Ensure enough height */
+      min-height: 100px;
       margin: 0;
       padding: 10px;
       font-family: Arial, sans-serif;
       background: white;
       box-sizing: border-box;
-      overflow-x: hidden;
-      /* Remove horizontal scrollbar */
-      overflow-y: auto;
-      /* Vertical scrollbar if needed */
       display: flex;
       flex-direction: column;
       align-items: center;
-      /* Center-align all children horizontally */
+      justify-content: center;
+      text-align: center;
     }
 
     button {
       width: 80%;
-      /* Slightly narrower for better aesthetics */
       margin: 8px 0;
-      /* Consistent spacing */
       padding: 10px;
       cursor: pointer;
       font-size: 14px;
       border: 1px solid #ccc;
       border-radius: 4px;
-      /* Rounded corners */
       background-color: #f8f8f8;
-      /* Light background */
       text-align: center;
-      /* Center button text */
     }
 
     button:hover {
       background-color: #e0e0e0;
-      /* Hover effect */
+    }
+
+    p {
+      font-size: 14px;
+      color: #333;
     }
 
     .version {
       color: #666;
       font-size: 12px;
-      text-align: center;
       margin-top: 10px;
-    }
-
-    #geminiPrompt {
-      width: 80%;
-      /* Match button width */
-      margin: 8px 0;
-      padding: 10px;
-      resize: both;
-      min-height: 60px;
-      max-height: 150px;
-      box-sizing: border-box;
-      font-size: 14px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-
-    #geminiResponse {
-      width: 80%;
-      /* Match other elements */
-      margin-top: 10px;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      max-height: 100px;
-      overflow-y: auto;
-      word-wrap: break-word;
-      font-size: 12px;
-      text-align: center;
-      /* Center text */
-      background-color: #f0f0f0;
-      /* Light gray background */
-    }
-
-    #dragHandle {
-      width: 80%;
-      /* Match other elements */
-      padding: 10px;
-      background: #e0e0e0;
-      /* Slightly darker for distinction */
-      cursor: move;
-      text-align: center;
-      border-bottom: 1px solid #ccc;
-      border-radius: 4px 4px 0 0;
-      /* Rounded top corners */
-      user-select: none;
-      font-size: 14px;
-      font-weight: bold;
     }
   </style>
 </head>
 
 <body>
-  <div id="dragHandle">Meet Subtitles Saver</div>
-  <button id="startCapture">Start Capturing</button>
-  <button id="stopCapture">Stop Capturing</button>
-  <button id="downloadSubtitles">Download Subtitles</button>
-  <textarea id="geminiPrompt" placeholder="Enter your prompt here"></textarea>
-  <button id="sendToGemini">Send to Gemini</button>
-  <div id="geminiResponse"></div>
+  <p>Controls are in the draggable UI on the Google Meet page.</p>
+  <button id="toggleUI">Toggle UI</button>
   <div class="version">Version 0.1.1</div>
-  <script src="config.js"></script>
   <script src="popup.js"></script>
 </body>
 
