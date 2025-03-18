@@ -9,9 +9,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('stopCapture').addEventListener('click', async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const promptInput = document.getElementById("geminiPrompt");
+    const responseBox = document.getElementById("geminiResponse");
+
     if (tab) {
-      chrome.tabs.sendMessage(tab.id, { action: 'stopCapture' });
-      console.log('Stop capture message sent');
+      try {
+        // Stop the capture
+        chrome.tabs.sendMessage(tab.id, { action: 'stopCapture' });
+        console.log('Stop capture message sent');
+
+        // Get the captured subtitles
+        const response = await new Promise((resolve, reject) => {
+          chrome.tabs.sendMessage(tab.id, { action: 'downloadSubtitles' }, (response) => {
+            if (chrome.runtime.lastError) {
+              reject(chrome.runtime.lastError);
+            } else {
+              resolve(response);
+            }
+          });
+        });
+
+        // Display subtitles in prompt
+        if (response && response.content) {
+          const lines = response.content.split('\n');
+          const cleanSubtitles = lines
+            .map(line => {
+              const lastBracket = line.lastIndexOf(']');
+              return lastBracket !== -1 ? line.slice(lastBracket + 1).trim() : line.trim();
+            })
+            .filter(line => line && !line.startsWith('===') && !line.startsWith('Recorded on:'));
+
+          promptInput.value = cleanSubtitles.join('\n');
+          responseBox.textContent = "Cleaned subtitles loaded into prompt";
+        } else {
+          promptInput.value = "";
+          responseBox.textContent = "No subtitles captured";
+        }
+      } catch (error) {
+        console.error('Error stopping capture:', error);
+        responseBox.textContent = "Error getting subtitles: " + error.message;
+      }
     }
   });
 
@@ -58,35 +95,75 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   });
-});
 
-  const apiKey = GEMINI_API_KEY;
-
-  const model = "gemini-1.5-pro-latest";
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
-  document.getElementById("sendToGemini").addEventListener("click", () => {
-    const prompt = document.getElementById("geminiPrompt").value;
+  document.getElementById("sendToGemini").addEventListener("click", async () => {
+    const apiKey = GEMINI_API_KEY;
+    const model = "gemini-1.5-pro-latest";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const promptInput = document.getElementById("geminiPrompt");
     const responseBox = document.getElementById("geminiResponse");
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
     responseBox.textContent = "Loading...";
 
-    fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
-      })
-    })
-      .then(res => res.json())
-      .then(data => {
-        const output = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response";
-        responseBox.textContent = output;
-      })
-      .catch(err => {
-        console.error(err);
-        responseBox.textContent = "Error: " + err.message;
-      });
+    if (tab) {
+      try {
+        // Get the captured subtitles first
+        const response = await new Promise((resolve, reject) => {
+          chrome.tabs.sendMessage(tab.id, { action: 'downloadSubtitles' }, (response) => {
+            if (chrome.runtime.lastError) {
+              reject(chrome.runtime.lastError);
+            } else {
+              resolve(response);
+            }
+          });
+        });
+
+        // Get the current prompt value
+        const userPrompt = promptInput.value.trim();
+        let fullPrompt = userPrompt;
+
+        // Combine with subtitles if available
+        if (response && response.content) {
+          fullPrompt = `${userPrompt}\n\nCaptured Subtitles:\n${response.content}`;
+        } else if (!response || response.error) {
+          responseBox.textContent = "Warning: No subtitles captured yet. Using prompt only...";
+        }
+
+        // Display the full message in the prompt input
+        promptInput.value = fullPrompt;
+
+        // Ask for confirmation before sending
+        if (confirm("Do you want to send this to Gemini?\n\nPress OK to send, Cancel to edit")) {
+          responseBox.textContent = "Sending to Gemini...";
+
+          // Send to Gemini API
+          fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: fullPrompt }] }]
+            })
+          })
+            .then(res => res.json())
+            .then(data => {
+              const output = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response";
+              responseBox.textContent = output;
+            })
+            .catch(err => {
+              console.error(err);
+              responseBox.textContent = "Error: " + err.message;
+            });
+        } else {
+          responseBox.textContent = "Send cancelled. Edit the prompt and try again.";
+        }
+
+      } catch (error) {
+        console.error('Error:', error);
+        responseBox.textContent = "Error getting subtitles: " + error.message;
+      }
+    }
   });
+});
