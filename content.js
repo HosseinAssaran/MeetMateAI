@@ -188,6 +188,33 @@ function createDraggableUI() {
     border-radius: 4px;
   `;
 
+  const shortAnswerContainer = document.createElement('div');
+  shortAnswerContainer.style.cssText = `
+    width: 80%;
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  `;
+
+  const shortAnswerCheckbox = document.createElement('input');
+  shortAnswerCheckbox.type = 'checkbox';
+  shortAnswerCheckbox.id = 'shortAnswerCheckbox';
+  shortAnswerCheckbox.style.cssText = `
+    margin-right: 8px;
+  `;
+
+  const shortAnswerLabel = document.createElement('label');
+  shortAnswerLabel.htmlFor = 'shortAnswerCheckbox';
+  shortAnswerLabel.textContent = 'Short Answer';
+  shortAnswerLabel.style.cssText = `
+    font-size: 14px;
+    color: #333;
+  `;
+
+  shortAnswerContainer.appendChild(shortAnswerCheckbox);
+  shortAnswerContainer.appendChild(shortAnswerLabel);
+
   const sendButton = document.createElement('button');
   sendButton.id = 'sendToGemini';
   sendButton.textContent = 'Send to Gemini';
@@ -227,6 +254,7 @@ function createDraggableUI() {
   ui.appendChild(stopButton);
   ui.appendChild(downloadButton);
   ui.appendChild(promptInput);
+  ui.appendChild(shortAnswerContainer); // Add checkbox container
   ui.appendChild(sendButton);
   ui.appendChild(status);
   document.body.appendChild(ui);
@@ -353,8 +381,14 @@ function createDraggableUI() {
     updateSubtitleDisplay('Loading...');
     debugLog('Prompt before processing:', userPrompt);
 
+    // Check if short answer checkbox is checked
+    const shortAnswerChecked = shortAnswerCheckbox.checked;
+    if (shortAnswerChecked) {
+      fullPrompt = `Short answer: ${fullPrompt}`;
+      debugLog('Short answer prepended to prompt');
+    }
+
     if (subtitles.length > 0) {
-      fullPrompt = `${userPrompt}`;
       debugLog('Full prompt with subtitles:', fullPrompt);
     } else {
       updateSubtitleDisplay('Warning: No subtitles captured yet. Using prompt only...');
