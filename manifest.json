@@ -20,7 +20,7 @@
   "content_scripts": [
     {
       "matches": ["https://meet.google.com/*"],
-      "js": ["content.js"]
+      "js": ["config.js", "content.js"]
     }
   ],
   "background": {

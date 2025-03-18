@@ -266,8 +266,8 @@ function createDraggableUI() {
   startButton.addEventListener('click', () => {
     debugLog('Starting capture');
     isCapturing = true;
-    subtitles = [];
-    lastSubtitle = '';
+    subtitles = []; // Clear subtitles to start fresh
+    lastSubtitle = ''; // Reset last subtitle
 
     if (currentObserver) {
       currentObserver.disconnect();
@@ -336,41 +336,62 @@ function createDraggableUI() {
     });
   });
 
-  sendButton.addEventListener('click', () => {
-    const apiKey = "your-api-key-here"; // Replace with your actual Gemini API key
+  sendButton.addEventListener('click', async () => {
+    debugLog('Send to Gemini clicked');
+    if (typeof GEMINI_API_KEY === 'undefined') {
+      updateSubtitleDisplay('Error: GEMINI_API_KEY not defined');
+      debugLog('GEMINI_API_KEY is undefined');
+      return;
+    }
+
+    const apiKey = GEMINI_API_KEY;
     const model = 'gemini-1.5-pro-latest';
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     const userPrompt = promptInput.value.trim();
     let fullPrompt = userPrompt;
 
     updateSubtitleDisplay('Loading...');
+    debugLog('Prompt before processing:', userPrompt);
 
     if (subtitles.length > 0) {
-      fullPrompt = `${userPrompt}\n\nCaptured Subtitles:\n${subtitles.join('\n')}`;
+      fullPrompt = `${userPrompt}`;
+      debugLog('Full prompt with subtitles:', fullPrompt);
     } else {
       updateSubtitleDisplay('Warning: No subtitles captured yet. Using prompt only...');
+      debugLog('No subtitles, using prompt only');
     }
 
     promptInput.value = fullPrompt;
 
     if (confirm('Do you want to send this to Gemini?\n\nPress OK to send, Cancel to edit')) {
       updateSubtitleDisplay('Sending to Gemini...');
-      fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] })
-      })
-        .then(res => res.json())
-        .then(data => {
-          const output = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response';
-          updateSubtitleDisplay(output);
-        })
-        .catch(err => {
-          console.error(err);
-          updateSubtitleDisplay('Error: ' + err.message);
+      debugLog('Sending request to Gemini API with key:', apiKey.substring(0, 5) + '...');
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] })
         });
+
+        debugLog('Fetch response status:', response.status);
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        debugLog('API response data:', data);
+
+        const output = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from Gemini';
+        updateSubtitleDisplay(output);
+        debugLog('Output displayed:', output);
+      } catch (err) {
+        console.error('Fetch error:', err);
+        updateSubtitleDisplay(`Error: ${err.message}`);
+        debugLog('Error occurred:', err.message);
+      }
     } else {
       updateSubtitleDisplay('Send cancelled. Edit the prompt and try again.');
+      debugLog('Send cancelled by user');
     }
   });
 }
