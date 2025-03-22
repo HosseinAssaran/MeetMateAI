@@ -30,10 +30,11 @@ MeetMate AI is a Chrome extension that enhances your Google Meet experience by c
 1. Clone the repository:
    git clone https://github.com/HosseinAssaran/MeetMateAI.git
 
-2. Open Chrome and go to `chrome://extensions/`
-3. Enable **Developer mode** (top right corner)
-4. Click **Load unpacked**
-5. Select the extension's root folder
+2. Go to Configuration part of this document and set the api key.
+3. Open Chrome and go to `chrome://extensions/`
+4. Enable **Developer mode** (top right corner)
+5. Click **Load unpacked**
+6. Select the extension's root folder
 
 ---
 
