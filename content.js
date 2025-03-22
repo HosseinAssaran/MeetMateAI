@@ -108,7 +108,7 @@ function createDraggableUI() {
 
   const dragHandle = document.createElement('div');
   dragHandle.id = 'dragHandle';
-  dragHandle.textContent = 'Meet Subtitles Saver';
+  dragHandle.textContent = 'MeetMate AI';
   dragHandle.style.cssText = `
     width: 80%;
     padding: 10px;

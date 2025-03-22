@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Meet Subtitles Saver",
+  "name": "MeetMate AI",
   "version": "0.1.1",
-  "description": "Captures and saves Google Meet subtitles",
+  "description": "",
   "permissions": [
     "scripting",
     "storage",

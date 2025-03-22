@@ -1,9 +1,9 @@
 const VERSION = '0.1.1';
 
-console.log(`[Meet Subtitles v${VERSION}] Background script loaded`);
+console.log(`[MeetMateAI v${VERSION}] Background script loaded`);
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log(`[Meet Subtitles v${VERSION}] Background script received message:`, request);
+  console.log(`[MeetMateAI v${VERSION}] Background script received message:`, request);
 
   if (request.action === 'download') {
     chrome.downloads.download({
@@ -61,5 +61,5 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 chrome.runtime.onInstalled.addListener(() => {
-  console.log(`[Meet Subtitles v${VERSION}] Extension installed/updated`);
+  console.log(`[MeetMateAI v${VERSION}] Extension installed/updated`);
 });
