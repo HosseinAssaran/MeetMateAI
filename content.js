@@ -3,7 +3,7 @@ let subtitles = [];
 let lastSubtitle = '';
 let debugMode = true;
 let basePrompt = '';
-const VERSION = '0.1.1';
+const VERSION = '0.1.2';
 let GEMINI_API_KEY = null;
 
 // Load API key from storage on initialization
