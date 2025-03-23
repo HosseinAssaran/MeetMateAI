@@ -12,6 +12,8 @@ chrome.storage.sync.get(['geminiApiKey'], (result) => {
   debugLog('API key loaded from storage:', GEMINI_API_KEY ? 'Set' : 'Not set');
 });
 
+
+
 // Function to prompt user for API key if not set
 function promptForApiKey() {
   chrome.storage.sync.get(['geminiApiKey'], (result) => {
@@ -437,19 +439,19 @@ function createDraggableUI() {
     debugLog('Send to Gemini clicked');
     chrome.storage.sync.get(['geminiApiKey'], (result) => {
       GEMINI_API_KEY = result.geminiApiKey || null;
+      debugLog('GEMINI_API_KEY:', GEMINI_API_KEY); // Log after retrieval
+  
       if (!GEMINI_API_KEY) {
         updateSubtitleDisplay('No API key set. Please set it in the popup.');
-        return;
+        return; // Stops here if no API key
       }
-    });
-    debugLog('GEMINI_API_KEY:', GEMINI_API_KEY);
-
+  
+      // Only proceeds if GEMINI_API_KEY is set
       const userPrompt = promptInput.value.trim();
       let fullPrompt = userPrompt;
   
       updateSubtitleDisplay('Loading...');
       debugLog('Prompt before processing:', userPrompt);
-
   
       if (subtitles.length > 0) {
         debugLog('Full prompt with subtitles:', fullPrompt);
@@ -463,36 +465,31 @@ function createDraggableUI() {
         updateSubtitleDisplay('Sending to Gemini...');
         debugLog('Preparing to send prompt to background script:', fullPrompt);
   
-        try {
-          chrome.runtime.sendMessage({
-            action: 'sendToGemini',
-            prompt: fullPrompt,
-            apiKey: GEMINI_API_KEY // Send the API key from storage
-          }, (response) => {
-            if (chrome.runtime.lastError) {
-              debugLog('Message sending failed:', chrome.runtime.lastError.message);
-              updateSubtitleDisplay('Error: ' + chrome.runtime.lastError.message);
-              return;
-            }
+        chrome.runtime.sendMessage({
+          action: 'sendToGemini',
+          prompt: fullPrompt,
+          apiKey: GEMINI_API_KEY
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            debugLog('Message sending failed:', chrome.runtime.lastError.message);
+            updateSubtitleDisplay('Error: ' + chrome.runtime.lastError.message);
+            return;
+          }
   
-            debugLog('Response from background:', response);
-            if (response && response.success) {
-              updateSubtitleDisplay(response.output);
-              debugLog('Output received and displayed:', response.output);
-            } else {
-              updateSubtitleDisplay(`Error: ${response?.error || 'Unknown error'}`);
-              debugLog('Error from background:', response?.error || 'No error message');
-            }
-          });
-          debugLog('Message sent to background script with API key');
-        } catch (err) {
-          debugLog('Error during message send:', err.message);
-          updateSubtitleDisplay('Error: ' + err.message);
-        }
+          debugLog('Response from background:', response);
+          if (response && response.success) {
+            updateSubtitleDisplay(response.output);
+            debugLog('Output received and displayed:', response.output);
+          } else {
+            updateSubtitleDisplay(`Error: ${response?.error || 'Unknown error'}`);
+            debugLog('Error from background:', response?.error || 'No error message');
+          }
+        });
       } else {
         updateSubtitleDisplay('Send cancelled. Edit the prompt and try again.');
         debugLog('Send cancelled by user');
       }
+    });
   });
 }
 
