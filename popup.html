@@ -7,7 +7,7 @@
     html,
     body {
       width: 300px;
-      min-height: 100px;
+      min-height: 150px; /* Increased height to accommodate new elements */
       margin: 0;
       padding: 10px;
       font-family: Arial, sans-serif;
@@ -35,7 +35,15 @@
     button:hover {
       background-color: #e0e0e0;
     }
-
+    input {
+      width: 80%;
+      margin: 8px 0;
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
     p {
       font-size: 14px;
       color: #333;
@@ -52,6 +60,8 @@
 <body>
   <p>Controls are in the draggable UI on the Google Meet page.</p>
   <button id="toggleUI">Toggle UI</button>
+  <input type="text" id="apiKeyInput" placeholder="Enter Gemini API key">
+  <button id="setApiKey">Set API Key</button>
   <div class="version">Version 0.1.1</div>
   <script src="popup.js"></script>
 </body>

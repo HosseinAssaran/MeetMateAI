@@ -4,6 +4,25 @@ let lastSubtitle = '';
 let debugMode = true;
 let basePrompt = '';
 const VERSION = '0.1.1';
+let GEMINI_API_KEY = null;
+
+// Load API key from storage on initialization
+chrome.storage.sync.get(['geminiApiKey'], (result) => {
+  GEMINI_API_KEY = result.geminiApiKey || null;
+  debugLog('API key loaded from storage:', GEMINI_API_KEY ? 'Set' : 'Not set');
+});
+
+// Function to prompt user for API key if not set
+function promptForApiKey() {
+  chrome.storage.sync.get(['geminiApiKey'], (result) => {
+    if (!result.geminiApiKey) {
+      updateSubtitleDisplay('No API key set. Please set it in the popup.');
+    } else {
+      GEMINI_API_KEY = result.geminiApiKey;
+      debugLog('API key retrieved from storage:', GEMINI_API_KEY);
+    }
+  });
+}
 
 // Function to format timestamp
 function formatTimestamp() {
@@ -416,55 +435,64 @@ function createDraggableUI() {
 
   sendButton.addEventListener('click', () => {
     debugLog('Send to Gemini clicked');
-    const userPrompt = promptInput.value.trim();
-    let fullPrompt = userPrompt;
-
-    updateSubtitleDisplay('Loading...');
-    debugLog('Prompt before processing:', userPrompt);
-
-
-    if (subtitles.length > 0) {
-      debugLog('Full prompt with subtitles:', fullPrompt);
-    } else {
-      debugLog('No subtitles, using prompt only');
-    }
-
-    promptInput.value = fullPrompt;
-
-    if (confirm('Do you want to send this to Gemini?\n\nPress OK to send, Cancel to edit')) {
-      updateSubtitleDisplay('Sending to Gemini...');
-      debugLog('Preparing to send prompt to background script:', fullPrompt);
-
-      try {
-        chrome.runtime.sendMessage({
-          action: 'sendToGemini',
-          prompt: fullPrompt,
-          apiKey: GEMINI_API_KEY // Pass the key from config.js
-        }, (response) => {
-          if (chrome.runtime.lastError) {
-            debugLog('Message sending failed:', chrome.runtime.lastError.message);
-            updateSubtitleDisplay('Error: ' + chrome.runtime.lastError.message);
-            return;
-          }
-
-          debugLog('Response from background:', response);
-          if (response && response.success) {
-            updateSubtitleDisplay(response.output);
-            debugLog('Output received and displayed:', response.output);
-          } else {
-            updateSubtitleDisplay(`Error: ${response?.error || 'Unknown error'}`);
-            debugLog('Error from background:', response?.error || 'No error message');
-          }
-        });
-        debugLog('Message sent to background script with API key');
-      } catch (err) {
-        debugLog('Error during message send:', err.message);
-        updateSubtitleDisplay('Error: ' + err.message);
+    chrome.storage.sync.get(['geminiApiKey'], (result) => {
+      GEMINI_API_KEY = result.geminiApiKey || null;
+      if (!GEMINI_API_KEY) {
+        updateSubtitleDisplay('No API key set. Please set it in the popup.');
+        return;
       }
-    } else {
-      updateSubtitleDisplay('Send cancelled. Edit the prompt and try again.');
-      debugLog('Send cancelled by user');
-    }
+    });
+    debugLog('GEMINI_API_KEY:', GEMINI_API_KEY);
+
+      const userPrompt = promptInput.value.trim();
+      let fullPrompt = userPrompt;
+  
+      updateSubtitleDisplay('Loading...');
+      debugLog('Prompt before processing:', userPrompt);
+
+  
+      if (subtitles.length > 0) {
+        debugLog('Full prompt with subtitles:', fullPrompt);
+      } else {
+        debugLog('No subtitles, using prompt only');
+      }
+  
+      promptInput.value = fullPrompt;
+  
+      if (confirm('Do you want to send this to Gemini?\n\nPress OK to send, Cancel to edit')) {
+        updateSubtitleDisplay('Sending to Gemini...');
+        debugLog('Preparing to send prompt to background script:', fullPrompt);
+  
+        try {
+          chrome.runtime.sendMessage({
+            action: 'sendToGemini',
+            prompt: fullPrompt,
+            apiKey: GEMINI_API_KEY // Send the API key from storage
+          }, (response) => {
+            if (chrome.runtime.lastError) {
+              debugLog('Message sending failed:', chrome.runtime.lastError.message);
+              updateSubtitleDisplay('Error: ' + chrome.runtime.lastError.message);
+              return;
+            }
+  
+            debugLog('Response from background:', response);
+            if (response && response.success) {
+              updateSubtitleDisplay(response.output);
+              debugLog('Output received and displayed:', response.output);
+            } else {
+              updateSubtitleDisplay(`Error: ${response?.error || 'Unknown error'}`);
+              debugLog('Error from background:', response?.error || 'No error message');
+            }
+          });
+          debugLog('Message sent to background script with API key');
+        } catch (err) {
+          debugLog('Error during message send:', err.message);
+          updateSubtitleDisplay('Error: ' + err.message);
+        }
+      } else {
+        updateSubtitleDisplay('Send cancelled. Edit the prompt and try again.');
+        debugLog('Send cancelled by user');
+      }
   });
 }
 
