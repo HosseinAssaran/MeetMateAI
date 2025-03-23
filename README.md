@@ -30,26 +30,24 @@ MeetMate AI is a Chrome extension that enhances your Google Meet experience by c
 1. Clone the repository:
    git clone https://github.com/HosseinAssaran/MeetMateAI.git
 
-2. Go to Configuration part of this document and set the api key.
-3. Open Chrome and go to `chrome://extensions/`
-4. Enable **Developer mode** (top right corner)
-5. Click **Load unpacked**
-6. Select the extension's root folder
+2. Open Chrome and go to `chrome://extensions/`
+3. Enable **Developer mode** (top right corner)
+4. Click **Load unpacked**
+5. Select the extension's root folder
 
 ---
 
 ## 🔑 Configuration
 
-### Set Gemini API Key
+### Set Up Your Gemini API Key
 
-1. Visit: [https://makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey)
-2. Log in with your Google account.
-3. Click **"Create API Key"**.
-4. **Copy your API key.**
-5. Replace `YOUR_API_KEY_HERE` in `config.js` with API Key you copied:
-```js
-const GEMINI_API_KEY = "YOUR_API_KEY_HERE";
-```
+1. Visit: [https://makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey)  
+2. Log in with your Google account.  
+3. Click **"Create API Key"**.  
+4. **Copy your API key**.  
+5. Click the extension icon, and in the pop-up menu, paste the API key into the input box.  
+6. Click **"Set API Key"** to save and apply the key.
+
 
 ### Debug Mode
 Disable console logging by setting debugMode to false in content.js:
@@ -68,7 +66,7 @@ let debugMode = false;
 5. Click **Stop Capturing** when done. It copies captured subtitle to the prompt box.
 6. Click **Download Subtitles** to save `.txt` file  
 7. Modify the prompt and click **Send to Gemini**  
-8. View AI-generated analysis or summary
+8. View AI-generated answer
 
 ---
 
