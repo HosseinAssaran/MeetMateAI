@@ -1,6 +1,6 @@
 let isCapturing = false;
 let subtitles = [];
-let lastSubtitle = '';
+let lastSubtitles = new Map(); // Track last subtitle per container
 let debugMode = true;
 let basePrompt = '';
 const VERSION = '0.1.2';
@@ -11,20 +11,6 @@ chrome.storage.sync.get(['geminiApiKey'], (result) => {
   GEMINI_API_KEY = result.geminiApiKey || null;
   debugLog('API key loaded from storage:', GEMINI_API_KEY ? 'Set' : 'Not set');
 });
-
-
-
-// Function to prompt user for API key if not set
-function promptForApiKey() {
-  chrome.storage.sync.get(['geminiApiKey'], (result) => {
-    if (!result.geminiApiKey) {
-      updateSubtitleDisplay('No API key set. Please set it in the popup.');
-    } else {
-      GEMINI_API_KEY = result.geminiApiKey;
-      debugLog('API key retrieved from storage:', GEMINI_API_KEY);
-    }
-  });
-}
 
 // Function to format timestamp
 function formatTimestamp() {
@@ -39,41 +25,52 @@ function debugLog(...args) {
   }
 }
 
-// Function to check and capture subtitles
+// Function to check and capture subtitles with speaker names
 function checkForSubtitles() {
-  debugLog('Check triggered');
   if (!isCapturing) {
     debugLog('Capture not active');
     return;
   }
 
-  const mainContainer = document.querySelector('div[jsname="YSxPC"].bYevke.wY1pdd');
-  debugLog('Main container found:', !!mainContainer);
+  const mainContainers = document.querySelectorAll('div.nMcdL.bj4p3b');
+  debugLog('mainContainers found:', mainContainers.length);
 
-  if (mainContainer) {
-    const subtitleElement = mainContainer.querySelector('div[jsname="tgaKEf"].bh44bd.VbkSUe');
-    debugLog('Subtitle element found:', !!subtitleElement);
+  if (mainContainers.length > 0) {
+    mainContainers.forEach((mainContainer, index) => {
+      const subtitleElement = mainContainer.querySelector('div[jsname="tgaKEf"].bh44bd.VbkSUe');
+      const nameElement = mainContainer.querySelector('div.KcIKyf.jxFHg span.NWpY1d');
 
-    if (subtitleElement) {
-      const text = subtitleElement.textContent.trim();
-      debugLog('Found text:', text);
+      if (subtitleElement && nameElement) {
+        const text = subtitleElement.textContent.trim();
+        const speaker = nameElement.textContent.trim();
+        const subtitleKey = `${speaker}: ${text}`;
+        const containerKey = `${index}:${subtitleKey}`; // Unique per container
 
-      if (text && text !== lastSubtitle) {
-        lastSubtitle = text;
-        const subtitleEntry = `[${formatTimestamp()}] ${text}`;
-        subtitles.push(subtitleEntry);
-        debugLog('Captured new subtitle:', subtitleEntry);
-        updateSubtitleDisplay(subtitleEntry);
+        // Only process if this container’s subtitle has changed
+        if (text && lastSubtitles.get(containerKey) !== subtitleKey) {
+          lastSubtitles.set(containerKey, subtitleKey);
+          const subtitleEntry = `[${formatTimestamp()}] ${speaker}: ${text}`;
+          subtitles.push(subtitleEntry);
+          debugLog(`Container ${index} - Captured:`, subtitleEntry);
+          updateSubtitleDisplay(subtitleEntry);
+        }
       }
-    }
+    });
   }
 }
 
-// Function to observe subtitle changes
+// Function to observe subtitle changes with throttling
 function observeSubtitles() {
   debugLog('Starting observation');
+  let lastCheckTime = 0;
+  const throttleMs = 500; // Throttle to 500ms
+
   const observer = new MutationObserver((mutations) => {
-    debugLog('Mutation detected, mutations count:', mutations.length);
+    const now = Date.now();
+    if (now - lastCheckTime < throttleMs) return; // Skip if too soon
+    lastCheckTime = now;
+
+    debugLog('Mutation detected, count:', mutations.length);
     checkForSubtitles();
   });
 
@@ -81,15 +78,20 @@ function observeSubtitles() {
     childList: true,
     subtree: true,
     characterData: true,
-    attributes: true
   };
 
-  observer.observe(document.body, config);
-  debugLog('Observer attached to document body');
+  // Target the captions region specifically
+  const target = document.querySelector('div[role="region"][aria-label="Captions"]') || document.body;
+  observer.observe(target, config);
+  debugLog('Observer attached to:', target === document.body ? 'body' : 'captions region');
 
   const checkInterval = setInterval(() => {
-    debugLog('Interval check');
-    checkForSubtitles();
+    const now = Date.now();
+    if (now - lastCheckTime >= throttleMs) {
+      debugLog('Interval check');
+      checkForSubtitles();
+      lastCheckTime = now;
+    }
   }, 1000);
 
   return { observer, checkInterval };
@@ -340,7 +342,7 @@ function createDraggableUI() {
     debugLog('Starting capture');
     isCapturing = true;
     subtitles = [];
-    lastSubtitle = '';
+    lastSubtitles.clear(); // Reset tracking
 
     if (currentObserver) {
       currentObserver.disconnect();
@@ -440,31 +442,31 @@ function createDraggableUI() {
     chrome.storage.sync.get(['geminiApiKey'], (result) => {
       GEMINI_API_KEY = result.geminiApiKey || null;
       debugLog('GEMINI_API_KEY:', GEMINI_API_KEY); // Log after retrieval
-  
+
       if (!GEMINI_API_KEY) {
         updateSubtitleDisplay('No API key set. Please set it in the popup.');
         return; // Stops here if no API key
       }
-  
+
       // Only proceeds if GEMINI_API_KEY is set
       const userPrompt = promptInput.value.trim();
       let fullPrompt = userPrompt;
-  
+
       updateSubtitleDisplay('Loading...');
       debugLog('Prompt before processing:', userPrompt);
-  
+
       if (subtitles.length > 0) {
         debugLog('Full prompt with subtitles:', fullPrompt);
       } else {
         debugLog('No subtitles, using prompt only');
       }
-  
+
       promptInput.value = fullPrompt;
-  
+
       if (confirm('Do you want to send this to Gemini?\n\nPress OK to send, Cancel to edit')) {
         updateSubtitleDisplay('Sending to Gemini...');
         debugLog('Preparing to send prompt to background script:', fullPrompt);
-  
+
         chrome.runtime.sendMessage({
           action: 'sendToGemini',
           prompt: fullPrompt,
@@ -475,7 +477,7 @@ function createDraggableUI() {
             updateSubtitleDisplay('Error: ' + chrome.runtime.lastError.message);
             return;
           }
-  
+
           debugLog('Response from background:', response);
           if (response && response.success) {
             updateSubtitleDisplay(response.output);
