@@ -3,7 +3,7 @@ let subtitles = [];
 let lastSubtitles = new Map(); // Track last subtitle per container
 let debugMode = true;
 let basePrompt = '';
-const VERSION = '0.1.2';
+const VERSION = '0.1.3';
 let GEMINI_API_KEY = null;
 
 // Load API key from storage on initialization

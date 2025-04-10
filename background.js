@@ -1,4 +1,4 @@
-const VERSION = '0.1.2';
+const VERSION = '0.1.3';
 
 console.log(`[MeetMateAI v${VERSION}] Background script loaded`);
 
