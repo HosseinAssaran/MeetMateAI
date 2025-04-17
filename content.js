@@ -391,23 +391,6 @@ function createDraggableUI() {
     updateSubtitleDisplay('Capture started - CC enabled');
   });
 
-  // Event handler for checkbox
-  shortAnswerCheckbox.addEventListener('change', () => {
-    const currentText = promptInput.value.trim();
-    if (shortAnswerCheckbox.checked) {
-      if (!currentText.startsWith('Short answer: ')) {
-        basePrompt = currentText; // Store the base prompt
-        promptInput.value = `Short answer: ${basePrompt}`;
-      }
-    } else {
-      if (currentText.startsWith('Short answer: ')) {
-        promptInput.value = basePrompt; // Restore the base prompt
-      }
-    }
-    debugLog('Checkbox toggled. Prompt updated to:', promptInput.value);
-  });
-
-  // Updated stopButton event listener
   stopButton.addEventListener('click', () => {
     debugLog('Stopping capture');
     isCapturing = false;
@@ -523,6 +506,21 @@ function createDraggableUI() {
         debugLog('Send cancelled by user');
       }
     });
+  });
+
+  shortAnswerCheckbox.addEventListener('change', () => {
+    const currentText = promptInput.value.trim();
+    if (shortAnswerCheckbox.checked) {
+      if (!currentText.startsWith('Short answer: ')) {
+        basePrompt = currentText;
+        promptInput.value = `Short answer: ${basePrompt}`;
+      }
+    } else {
+      if (currentText.startsWith('Short answer: ')) {
+        promptInput.value = basePrompt;
+      }
+    }
+    debugLog('Checkbox toggled. Prompt updated to:', promptInput.value);
   });
 }
 
