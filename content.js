@@ -6,6 +6,10 @@ let basePrompt = '';
 const VERSION = '0.1.3';
 let GEMINI_API_KEY = null;
 
+// Variables for speaker-based subtitle buffering
+let currentSpeaker = null;
+let currentSubtitle = null;
+
 // Load API key from storage on initialization
 chrome.storage.sync.get(['geminiApiKey'], (result) => {
   GEMINI_API_KEY = result.geminiApiKey || null;
@@ -44,18 +48,40 @@ function checkForSubtitles() {
         const text = subtitleElement.textContent.trim();
         const speaker = nameElement.textContent.trim();
         const subtitleKey = `${speaker}: ${text}`;
-        const containerKey = `${index}:${subtitleKey}`; // Unique per container
+        const containerKey = `${index}:${subtitleKey}`;
 
         // Only process if this container’s subtitle has changed
         if (text && lastSubtitles.get(containerKey) !== subtitleKey) {
           lastSubtitles.set(containerKey, subtitleKey);
-          const subtitleEntry = `[${formatTimestamp()}] ${speaker}: ${text}`;
-          subtitles.push(subtitleEntry);
-          debugLog(`Container ${index} - Captured:`, subtitleEntry);
+          const subtitleEntry = `[${formatTimestamp()}] ${currentSpeaker}: ${currentSubtitle}`;
+
+          // If a new speaker is detected and we have a previous subtitle, save it
+          if (currentSpeaker && speaker !== currentSpeaker && currentSubtitle) {
+            subtitles.push(subtitleEntry);
+            debugLog(`Speaker changed - Saved subtitle:`, subtitleEntry);
+          }
+
+          // Update current speaker and subtitle
+          currentSpeaker = speaker;
+          currentSubtitle = text;
+          debugLog(`Updated subtitle for ${speaker}: ${text}`);
+          // Update status display with current subtitle
           updateSubtitleDisplay(subtitleEntry);
         }
       }
     });
+  }
+}
+
+// Function to finalize the current subtitle when capturing stops
+function finalizeCurrentSubtitle() {
+  if (currentSpeaker && currentSubtitle) {
+    const subtitleEntry = `[${formatTimestamp()}] ${currentSpeaker}: ${currentSubtitle}`;
+    subtitles.push(subtitleEntry);
+    debugLog(`Finalized subtitle on stop:`, subtitleEntry);
+    updateSubtitleDisplay(subtitleEntry);
+    currentSpeaker = null;
+    currentSubtitle = null;
   }
 }
 
@@ -343,6 +369,8 @@ function createDraggableUI() {
     isCapturing = true;
     subtitles = [];
     lastSubtitles.clear(); // Reset tracking
+    currentSpeaker = null; // Reset speaker
+    currentSubtitle = null; // Reset subtitle
 
     if (currentObserver) {
       currentObserver.disconnect();
@@ -392,6 +420,9 @@ function createDraggableUI() {
       currentInterval = null;
     }
     debugLog('Total subtitles captured:', subtitles.length);
+
+    // Save the last subtitle if it exists
+    finalizeCurrentSubtitle();
 
     // Disable CC automatically
     toggleCC(false);
