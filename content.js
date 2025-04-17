@@ -3,7 +3,7 @@ let subtitles = [];
 let lastSubtitles = new Map(); // Track last subtitle per container
 let debugMode = true;
 let basePrompt = '';
-const VERSION = '0.1.3';
+const VERSION = '0.1.4';
 let GEMINI_API_KEY = null;
 
 // Variables for speaker-based subtitle buffering
