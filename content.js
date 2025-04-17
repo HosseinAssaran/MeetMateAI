@@ -78,7 +78,7 @@ function finalizeCurrentSubtitle() {
   if (currentSpeaker && currentSubtitle) {
     const subtitleEntry = `[${formatTimestamp()}] ${currentSpeaker}: ${currentSubtitle}`;
     subtitles.push(subtitleEntry);
-    debugLog(`Finalized subtitle on stop:`, subtitleEntry);
+    debugLog(`Finalized subtitle:`, subtitleEntry);
     updateSubtitleDisplay(subtitleEntry);
     currentSpeaker = null;
     currentSubtitle = null;
@@ -426,6 +426,8 @@ function createDraggableUI() {
 
   downloadButton.addEventListener('click', () => {
     debugLog('Downloading subtitles. Count:', subtitles.length);
+    // Save the last subtitle if it exists
+    finalizeCurrentSubtitle();
     if (subtitles.length === 0) {
       alert('No subtitles to download');
       updateSubtitleDisplay('No subtitles available to download');
