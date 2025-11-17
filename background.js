@@ -28,7 +28,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       return true;
     }
 
-    const model = 'gemini-1.5-pro-latest';
+    const model = 'gemini-2.5-flash';
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
     console.log('Sending request to Gemini API with prompt:', request.prompt);
