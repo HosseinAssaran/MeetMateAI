@@ -41,7 +41,7 @@ function checkForSubtitles() {
 
   if (mainContainers.length > 0) {
     mainContainers.forEach((mainContainer, index) => {
-      const subtitleElement = mainContainer.querySelector('div[jsname="tgaKEf"].bh44bd.VbkSUe');
+      const subtitleElement = mainContainer.querySelector('div.ygicle.VbkSUe');
       const nameElement = mainContainer.querySelector('div.KcIKyf.jxFHg span.NWpY1d');
 
       if (subtitleElement && nameElement) {
